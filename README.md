@@ -1,1 +1,3 @@
-# Uma-implementa-o-do-c-lculo-lambda-n-o-tipado-em-Elixir
+# An implementation of untyped lambda calculus
+
+Trabalho final da disciplina CAES005 Introduction to Functional Programming da UTFPR
