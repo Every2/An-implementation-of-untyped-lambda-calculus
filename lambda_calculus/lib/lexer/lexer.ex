@@ -1,3 +1,0 @@
-defmodule Lexer do
-  
-end
