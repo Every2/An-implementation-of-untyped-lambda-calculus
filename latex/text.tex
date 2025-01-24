@@ -16,7 +16,7 @@
 \newtheorem{corollary}[theorem]{Corolário}
 \newtheorem{example}[theorem]{Exemplo}
 \newtheorem{fact}[theorem]{Fato}
-     
+
 \sloppy
 \DeclareMathOperator{\FV}{\mathrm{FV}}
 
@@ -33,6 +33,7 @@
 \maketitle
 
 \begin{abstract}
+
   
 \end{abstract}
      
@@ -42,7 +43,6 @@
 
 
 \section{Introdução}
-
 
 \section{Linguagem} \label{sec:firstpage}
 
@@ -89,7 +89,11 @@
   \item $(\lambda y.P)[x := N] = \lambda z.P[y := z][x := N]$ se $x \in \FV[P]$ e $y \in \FV[N]$.  
   \end{enumerate}
 \end{definition}
+\vspace{1cm}
 
+\begin{definition}
+  Seja um termo $P$ e que contém uma abstração $\lambda x.M$ como subfórmula e seja $y \not\in \FV[M]$. Uma $\alpha$-conversão de $P$ é um termo $Q$ obtido a partir de $P$ substituindo uma ou mais ocorrências da subfórmula $\lambda x.M$ por $\lambda y.M[x := y]$. 
+\end{definition}
 
 \section{Referências}
 
