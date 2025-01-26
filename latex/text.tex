@@ -91,8 +91,19 @@
 \end{definition}
 \vspace{1cm}
 
+\begin{definition} \textbf{($\alpha$-conversão)}
+  Seja um termo $P$ e que contém uma abstração $\lambda x.M$ como subtermo e seja $y \not\in \FV[M]$. Uma $\alpha$-conversão de $P$ é um termo $Q$ obtido a partir de $P$ substituindo uma ou mais ocorrências do subtermo $\lambda x.M$ por $\lambda y.M[x := y]$. 
+\end{definition}
+
+\section{$\beta$-redução}
 \begin{definition}
-  Seja um termo $P$ e que contém uma abstração $\lambda x.M$ como subfórmula e seja $y \not\in \FV[M]$. Uma $\alpha$-conversão de $P$ é um termo $Q$ obtido a partir de $P$ substituindo uma ou mais ocorrências da subfórmula $\lambda x.M$ por $\lambda y.M[x := y]$. 
+  Seja um termo $P$ e que contém um subtermo da forma $(\lambda x.M)N$. Uma $\beta$-contração de $P$ é um termo $Q$ obtida a partir de $P$ substituindo uma ocorrência do subtermo $(\lambda x.M)N$ por $M[x := N]$. Denotamos essa relação por $P \to_{1 \beta}Q$.
+\end{definition}
+\vspace{1cm}
+
+\begin{definition}
+  Seja um termo $P$. Uma $\beta$-redução de $P$ é um termo $Q$ obtido a partir de $P$ por uma sequência da forma:
+  $$P \equiv_\alpha P' \to_{1 \beta} P_1 \equiv_\alpha P_1' \to_{1 \beta} \ldots \to_{1 \beta} P_n \equiv_\alpha Q$$
 \end{definition}
 
 \section{Referências}
