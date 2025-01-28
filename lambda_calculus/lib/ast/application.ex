@@ -1,4 +1,4 @@
-defmodule Ast.Application do
+defmodule LambdaCalculus.Ast.Application do
   @enforce_keys [:terms, :body]
-  defstruct [:terms, body] 
+  defstruct [:terms, :body] 
 end

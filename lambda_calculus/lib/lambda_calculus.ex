@@ -29,9 +29,21 @@ defmodule LambdaCalculus do
 
   defp run(source) do
     tokens = LambdaCalculus.Lexer.Scanner.tokenize(source)
+
+    IO.puts("Tokens:")
+
     Enum.each(tokens, fn token ->
       IO.puts("#{token}")
     end)
+
+    ast = parse(tokens)
+
+    IO.puts("\nParsed AST:")
+    IO.inspect(ast)
+  end
+
+  defp parse(tokens) do
+    LambdaCalculus.Parser.Parser.parse(tokens)
   end
 end
 

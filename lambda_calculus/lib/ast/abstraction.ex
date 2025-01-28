@@ -1,4 +1,4 @@
-defmodule Ast.Abstraction do
-  @enforce_keys [:lambdat, :var]
-  defstruct [:lambdat, :var] 
+defmodule LambdaCalculus.Ast.Abstraction do
+  @enforce_keys [:term, :param]
+  defstruct [:term, :param] 
 end
