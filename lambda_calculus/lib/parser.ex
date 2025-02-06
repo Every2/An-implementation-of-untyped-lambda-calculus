@@ -11,6 +11,7 @@ defmodule LambdaCalculus.Parser do
   def parse(expr) do
     token_vec = LambdaCalculus.Lexer.tokenizer(expr)
     parse_tokens(token_vec)
+    # IO.inspect(parse_tokens(token_vec))
   end
 
   def parse_tokens(tvec) do
@@ -26,8 +27,8 @@ defmodule LambdaCalculus.Parser do
     if length(tvec) == 1 do
       elem = Enum.at(tvec, 0)
 
-      if elem == :variable do
-        %Variable{name: elem}
+      if elem.type == :variable do
+        %Variable{name: elem.lexeme}
       else
         nil
       end
@@ -41,14 +42,14 @@ defmodule LambdaCalculus.Parser do
       length(tvec) < 4 ->
         nil
 
-      Enum.at(tvec, 0) != :left_paren or List.last(tvec) != :right_paren ->
+      Enum.at(tvec, 0).type != :left_paren or List.last(tvec).type != :right_paren ->
         nil
 
       true ->
-        if Enum.at(tvec, 1) == :lambda and Enum.at(tvec, 3) == :dot do
+        if Enum.at(tvec, 1).type == :lambda and Enum.at(tvec, 3).type == :dot do
           lnode =
-            case Enum.at(tvec, 2) do
-              :variable -> %Variable{name: :variable}
+            case Enum.at(tvec, 2).type do
+              :variable -> %Variable{name: Enum.at(tvec, 2).lexeme}
               _ -> nil
             end
 
@@ -68,40 +69,46 @@ defmodule LambdaCalculus.Parser do
 
   def parse_application(tvec) do
     cond do
-      Enum.at(tvec, 0) != :left_paren or List.last(tvec) != :right_paren ->
+      Enum.at(tvec, 0).type != :left_paren or List.last(tvec).type != :right_paren ->
         nil
 
       true ->
-		slice = 1..(length(tvec) - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        slice = 1..(length(tvec) - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+
+
         {pos, _, _} =
           Enum.reduce_while(slice, {1, 0, 0}, fn x, {i, lp, rp} ->
-            new_lp = if x == :left_paren do
-				lp + 1
-				else
-				  lp
-			  end
-			new_rp = if x == :right_paren do
-			  rp + 1
-			else
-			  rp
-			end
-			if new_lp == new_rp do
-			  {:halt, {i + 1, new_lp, new_rp}}
-			else
-			  {:cont, {i + 1, new_lp, new_rp}}
-			end
+            new_lp =
+              if x.type == :left_paren do
+                lp + 1
+              else
+                lp
+              end
+
+            new_rp =
+              if x.type == :right_paren do
+                rp + 1
+              else
+                rp
+              end
+
+            if new_lp == new_rp do
+              {:halt, {i + 1, new_lp, new_rp}}
+            else
+              {:cont, {i + 1, new_lp, new_rp}}
+            end
           end)
 
-		lslice = 1..(pos - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
-		lnode = parse_tokens(lslice)
-		rslice = pos..(length(tvec) - 2) |> Enum.map(fn x -> Enum.at(tvec, x) end)
-		rnode = parse_tokens(rslice)
+        lslice = 1..(pos - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        lnode = parse_tokens(lslice)
+        rslice = pos..(length(tvec) - 2) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        rnode = parse_tokens(rslice)
 
-		if lnode != nil and rnode != nil do
-		  %Application{lterm: lnode, rterm: rnode}
-		else
-		  nil
-		end       
+        if lnode != nil and rnode != nil do
+          %Application{lterm: lnode, rterm: rnode}
+        else
+          nil
+        end
     end
   end
 end

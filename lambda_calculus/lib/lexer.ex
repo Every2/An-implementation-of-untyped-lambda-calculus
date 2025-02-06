@@ -1,41 +1,36 @@
 defmodule LambdaCalculus.Tokens do
-  @type t ::
-          :left_paren
-          | :right_paren
-          | :dot
-          | :lambda
-          | :variable
+  @enforce_keys [:type, :lexeme]
+  defstruct [:type, :lexeme]
 
   def is_var(c), do: (c >= "a" && c <= "z") || (c >= "A" && c <= "Z")
 
-
   def new(c) do
     cond do
-      is_var(c) -> :variable
-      c == "\\" -> :lambda
-      c == "(" -> :left_paren
-      c == ")" -> :right_paren
-      c == "." -> :dot
+      is_var(c) -> %LambdaCalculus.Tokens{type: :variable, lexeme: c}
+      c == "\\" -> %LambdaCalculus.Tokens{type: :lambda, lexeme: c}
+      c == "(" -> %LambdaCalculus.Tokens{type: :left_paren, lexeme: c}
+      c == ")" -> %LambdaCalculus.Tokens{type: :right_paren, lexeme: c}
+      c == "." -> %LambdaCalculus.Tokens{type: :dot, lexeme: c}
       true -> nil
     end
   end
 
-  defimpl String.Chars, for: Tokens do
-    def to_string(:left_paren), do: "Left Parenthesis"
-    def to_string(:right_paren), do: "Right Parenthesis"
-    def to_string(:dot), do: "Dot"
-    def to_string(:lambda), do: "Lambda"
-    def to_string(:variable), do: "Variable"
+  defimpl String.Chars, for: LambdaCalculus.Tokens do
+    def to_string(%LambdaCalculus.Tokens{type: type, lexeme: _lexeme} = _tokens) do
+      "#{type}"
+    end
   end
 end
 
 defmodule LambdaCalculus.Lexer do
+  alias LambdaCalculus.Tokens
+
   def tokenizer(expr) do
     expr
     |> String.trim()
     |> String.graphemes()
     |> Enum.reduce_while([], fn c, acc ->
-      case LambdaCalculus.Tokens.new(c) do
+      case Tokens.new(c) do
         nil -> {:halt, nil}
         token -> {:cont, [token | acc]}
       end
