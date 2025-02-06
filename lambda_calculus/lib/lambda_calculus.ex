@@ -1,50 +1,36 @@
 defmodule LambdaCalculus do
-  def main do
-    run_prompt()
-  end
+  alias LambdaCalculus.Lexer, as: L
+  alias LambdaCalculus.Parser, as: P
 
-  defp run_prompt do
+  def start do
     IO.puts("Welcome to Lambda Calculus REPL")
+
     loop()
   end
 
   defp loop do
     IO.write("> ")
+    input = IO.gets("") |> String.trim()
 
-    case IO.gets(" ") do
-      :eof ->
-        IO.puts("\nGoodBye!")
-
-      nil ->
-        IO.puts("No input detected, exiting...")
-
-      input ->
-        input
-        |> String.trim()
-        |> run()
-
-        loop()
+    case L.tokenizer(input) do
+      nil -> IO.puts("Invalid input.")
+      tokens -> 
+        print_tokens(tokens)
     end
+
+	case P.parse(input) do
+	  nil -> IO.puts("Não é um termo")
+	  term -> IO.puts("É um termo")
+	end
+
+    loop()
   end
 
-  defp run(source) do
-    tokens = LambdaCalculus.Lexer.Scanner.tokenize(source)
-
-    IO.puts("Tokens:")
-
+  defp print_tokens(tokens) do
     Enum.each(tokens, fn token ->
-      IO.puts("#{token}")
+      IO.puts(to_string(token))
     end)
-
-    ast = parse(tokens)
-
-    IO.puts("\nParsed AST:")
-    IO.inspect(ast)
-  end
-
-  defp parse(tokens) do
-    LambdaCalculus.Parser.Parser.parse(tokens)
   end
 end
 
-LambdaCalculus.main()
+LambdaCalculus.start()
