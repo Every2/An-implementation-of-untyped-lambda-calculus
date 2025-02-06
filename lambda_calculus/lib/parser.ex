@@ -17,6 +17,7 @@ defmodule LambdaCalculus.Parser do
     cond do
       parse_var(tvec) != nil -> parse_var(tvec)
       parse_abstraction(tvec) != nil -> parse_abstraction(tvec)
+      parse_application(tvec) != nil -> parse_application(tvec)
       true -> nil
     end
   end
@@ -62,6 +63,45 @@ defmodule LambdaCalculus.Parser do
         else
           nil
         end
+    end
+  end
+
+  def parse_application(tvec) do
+    cond do
+      Enum.at(tvec, 0) != :left_paren or List.last(tvec) != :right_paren ->
+        nil
+
+      true ->
+		slice = 1..(length(tvec) - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        {pos, _, _} =
+          Enum.reduce_while(slice, {1, 0, 0}, fn x, {i, lp, rp} ->
+            new_lp = if x == :left_paren do
+				lp + 1
+				else
+				  lp
+			  end
+			new_rp = if x == :right_paren do
+			  rp + 1
+			else
+			  rp
+			end
+			if new_lp == new_rp do
+			  {:halt, {i + 1, new_lp, new_rp}}
+			else
+			  {:cont, {i + 1, new_lp, new_rp}}
+			end
+          end)
+
+		lslice = 1..(pos - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+		lnode = parse_tokens(lslice)
+		rslice = pos..(length(tvec) - 2) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+		rnode = parse_tokens(rslice)
+
+		if lnode != nil and rnode != nil do
+		  %Application{lterm: lnode, rterm: rnode}
+		else
+		  nil
+		end       
     end
   end
 end
