@@ -1,6 +1,7 @@
 defmodule LambdaCalculus do
   alias LambdaCalculus.Lexer, as: L
   alias LambdaCalculus.Parser, as: P
+  alias LambdaCalculus.Op, as: O
 
   def start do
     IO.puts("Welcome to Lambda Calculus REPL")
@@ -20,7 +21,9 @@ defmodule LambdaCalculus do
 
 	case P.parse(input) do
 	  nil -> IO.puts("Não é um termo")
-	  term -> IO.puts("É um termo")
+	  term ->
+		IO.puts("É um termo")
+		IO.puts(O.exec(term))
 	end
 
     loop()

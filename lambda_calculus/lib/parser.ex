@@ -11,7 +11,6 @@ defmodule LambdaCalculus.Parser do
   def parse(expr) do
     token_vec = LambdaCalculus.Lexer.tokenizer(expr)
     parse_tokens(token_vec)
-    # IO.inspect(parse_tokens(token_vec))
   end
 
   def parse_tokens(tvec) do
