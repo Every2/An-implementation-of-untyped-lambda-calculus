@@ -4,28 +4,57 @@
 \usepackage{graphicx,url}
 \usepackage[utf8]{inputenc}
 \usepackage[brazil]{babel}
+\usepackage{verbatim}
 %\usepackage[latin1]{inputenc}
-\usepackage{amsmath, amsfonts, amssymb, amsthm}  
-\theoremstyle{definition}
-\newtheorem{theorem}{Teorema}
-\newtheorem{metatheorem}[theorem]{Metateorema}
-\newtheorem{metadefinition}[theorem]{Metadefinição}
-\newtheorem{definition}[theorem]{Definição}
-\newtheorem{proposition}[theorem]{Proposição}
-\newtheorem{lemma}[theorem]{Lema}
-\newtheorem{corollary}[theorem]{Corolário}
-\newtheorem{example}[theorem]{Exemplo}
-\newtheorem{fact}[theorem]{Fato}
 
 \sloppy
+
+% --------------------------------------------------------------------
+
+\usepackage{listings}
+\usepackage{amsmath, amsfonts, amssymb}
+
+\newtheorem{definition}{Definição}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+
+\newtheorem{theorem}[definition]{Teorema}
+\newtheorem{corollary}[definition]{Corolário}
+
 \DeclareMathOperator{\FV}{\mathrm{FV}}
+\DeclareMathOperator{\Var}{\mathrm{Var}}
+
+\lstdefinelanguage{elixir}{
+    morekeywords={case,catch,def,do,else,false,%
+        use,alias,receive,timeout,defmacro,defp,%
+        for,if,import,defmodule,defprotocol,%
+        nil,defmacrop,defoverridable,defimpl,%
+        super,fn,raise,true,try,end,with,%
+        unless},
+    otherkeywords={<-,->},
+    sensitive=true,
+    morecomment=[l]{\#},
+    morecomment=[n]{/*}{*/},
+    morestring=[b]",
+    morestring=[b]',
+    morestring=[b]"""
+}
+\lstset{
+  breaklines=true,
+  numbers=left,
+  language=elixir,
+}
+% --------------------------------------------------------------------
 
 \title{Uma Implementação do Cálculo Lambda não Tipado em Elixir}
 
 \author{Christian S. Lima\inst{1}, Adolfo Neto\inst{1} }
 
-\address{Universidade Tecnológica Federal do Paraná (UTFPR), Curitiba, Brasil \\
-  \email{christiansantoslima21@gmail.com, adolfo@utfpr.edu.br}
+
+\address{
+	Universidade Tecnológica Federal do Paraná (UTFPR) \\
+	Curitiba, Brasil
+	\email{christiansantoslima21@gmail.com, adolfo@utfpr.edu.br}
 }
 
 \begin{document} 
@@ -33,29 +62,34 @@
 \maketitle
 
 \begin{abstract}
-
-  
+	In this paper we realized a bibliographic revision about untyped lambda calculus and developed an interpreter in Elixir.
 \end{abstract}
      
 \begin{resumo} 
-  Nesse artigo vamos fazer uma revisão bibliográfica sobre o cálculo lambda não tipado e apresentar uma implementação em Elixir.
+	Neste artigo realizamos uma revisão bibliográfica sobre o cálculo lambda não tipado e construímos um interpretador em Elixir.
 \end{resumo}
 
-
 \section{Introdução}
+O cálculo lambda foi criado por Alonzo Church em \cite{church1932}. A ideia inicial era fundamentar a lógica e a matemática. Futuramente viria a ser a base para linguagens funcionais.
 
-\section{Linguagem} \label{sec:firstpage}
+Na seção 2, apresentamos o cálculo lambda não tipado, a noção de forma normal e como defini-las usando $\beta$-reduções.
+Consultamos alguns dos principais livros de referência sobre o cálculo lambda para a realização da revisão bibliográfica deste artigo, a saber: \cite{hindley2008lambda}, \cite{hindley1997basic}, \cite{sorensen2006lectures} e \cite{Barendregt1984-BARTLC}. Também consultamos alguns textos mais didáticos online, a saber: \cite{brandl-lcsbs} e \cite{brandl-pwlc}.
+
+Na seção 3, descrevemos nosso interpretador do cálculo lambda não tipado. Para implementá-lo, utilizamos técnicas apresentadas nos livros \cite{nystrom2021crafting} e \cite{aho2022compilers}. O código fonte está disponível em: \url{https://github.com/Every2/An-implementation-of-untyped-lambda-calculus}.
+
+\section{Cálculo Lambda não Tipado}
+
+\subsection{Linguagem}
 
 \begin{definition}
   O alfabeto do cálculo lambda é dado pelos seguintes símbolos:
   \begin{itemize}
   \item um conjunto de variáveis:
-    $$Var = \{x_i : i \in \mathbb{N}\};$$
+    $$\Var = \{x_i : i \in \mathbb{N}\};$$
   \item um abstrator: $\lambda$;
   \item três delimitadores: ``('', ``.'', ``)''.
   \end{itemize}
 \end{definition}
-\vspace{1cm}
 
 \begin{definition}
   Os $\lambda$-termos são definidos de forma indutiva pelas regras:
@@ -65,7 +99,6 @@
   \item Se $M$ é um $\lambda$-termo e $x$ uma variável, então $(\lambda x.M)$ é um $\lambda$-termo (chamado abstração). 
   \end{enumerate}
 \end{definition}
-\vspace{1cm}
 
 \begin{definition}
   Definimos recursivamente o conjunto das variáveis que ocorrem livres em um $\lambda$-termo $M$ pelas regras:
@@ -75,7 +108,6 @@
   \item $\FV[\lambda x.N] = \FV[N] - \{x\}$.
   \end{enumerate}
 \end{definition}
-\vspace{1cm}
 
 \begin{definition}
   Definimos recursivamente a substituição de todas as ocorrências livres de $x$ por $N$ pelas regras:
@@ -89,24 +121,244 @@
   \item $(\lambda y.P)[x := N] = \lambda z.P[y := z][x := N]$ se $x \in \FV[P]$ e $y \in \FV[N]$.  
   \end{enumerate}
 \end{definition}
-\vspace{1cm}
 
 \begin{definition} \textbf{($\alpha$-conversão)}
-  Seja um termo $P$ e que contém uma abstração $\lambda x.M$ como subtermo e seja $y \not\in \FV[M]$. Uma $\alpha$-conversão de $P$ é um termo $Q$ obtido a partir de $P$ substituindo uma ou mais ocorrências do subtermo $\lambda x.M$ por $\lambda y.M[x := y]$. 
+  Seja um termo $P$ e que contém uma abstração $\lambda x.M$ como subtermo e seja $y \not\in \FV[M]$. Uma $\alpha$-conversão de $P$ é um termo $Q$ obtido a partir de $P$ substituindo uma ou mais ocorrências do subtermo $\lambda x.M$ por $\lambda y.M[x := y]$. Se $Q$ é uma $\alpha$-conversão de $P$, escrevemos $P \equiv_\alpha Q$. 
 \end{definition}
 
-\section{$\beta$-redução}
+\subsection{$\beta$-redução}
+
 \begin{definition}
-  Seja um termo $P$ e que contém um subtermo da forma $(\lambda x.M)N$. Uma $\beta$-contração de $P$ é um termo $Q$ obtida a partir de $P$ substituindo uma ocorrência do subtermo $(\lambda x.M)N$ por $M[x := N]$. Denotamos essa relação por $P \to_{1 \beta}Q$.
+  Um redex é um termo da forma $(\lambda x.M)N$.  
 \end{definition}
-\vspace{1cm}
+
+\begin{definition}
+  Seja um termo $P$ e que contém um redex da forma $(\lambda x.M)N$. Uma $\beta$-contração de $P$ é um termo $Q$ obtida a partir de $P$ substituindo uma ocorrência do redex $(\lambda x.M)N$ por $M[x := N]$. Denotamos essa relação por $P \to_{1 \beta}Q$.
+\end{definition}
 
 \begin{definition}
   Seja um termo $P$. Uma $\beta$-redução de $P$ é um termo $Q$ obtido a partir de $P$ por uma sequência da forma:
   $$P \equiv_\alpha P' \to_{1 \beta} P_1 \equiv_\alpha P_1' \to_{1 \beta} \ldots \to_{1 \beta} P_n \equiv_\alpha Q$$
+  Quando $Q$ é uma $\beta$-redução de $P$, escrevemos $P \to_\beta Q$.
 \end{definition}
 
-\section{Referências}
+\begin{definition}
+  Dizemos que um termo $P$ está na forma normal quando nenhum dos seus subtermos é um redex. Quando $P \to_\beta Q$ e $Q$ é uma forma normal, dizemos que $Q$ é uma forma normal de $P$.   
+\end{definition}
+
+\begin{theorem}(Teorema de Church-Rosser)
+  Se $P \to_\beta M$ e $P \to_\beta N$, então existe um termo $Q$ tal que $M \to_\beta Q$ e $N \to_\beta Q$.   
+\end{theorem}
+
+\begin{corollary}
+  A forma normal de um termo $P$, se existe, é única, a menos de $\alpha$-conversão.
+\end{corollary}
+
+A provas dos resultados acima pode ser encontrada em \cite{hindley2008lambda}.
+
+Nem todo termo pode ser reduzido a uma forma normal, como vemos no exemplo abaixo:
+$$\begin{aligned}
+  (\lambda x. xx)(\lambda x. xx)
+  & \to_{1\beta} (\lambda x. xx)(\lambda x. xx) \\
+  & \to _{1\beta}(\lambda x. xx)(\lambda x. xx) \\
+  & \to_{1\beta} \ldots
+  \end{aligned}
+$$
+
+\section{O Interpretador}
+
+O interpretador do Cálculo Lambda funciona como um REPL (Read-Eval-Print Loop), ou seja, ele roda como uma função recursiva que roda infinitamente e avalia as expressões. Ele é dividido em 3 etapas, sendo elas:
+
+\subsection{Lexer}
+
+O lexer é a primeira etapa do interpretador, onde recebemos uma string e a convertemos em uma sequência de tokens.
+
+Um token tem a seguinte estrutura: um tipo que o identifica e um lexema, um símbolo que representa aquele token. Os tokens podem ser dos tipos seguintes:
+\begin{itemize}
+	\item Variable (variável);
+	\item Lambda (o símbolo de abstração, $\lambda$);
+	\item LeftParen (parênteses esquerdo);
+	\item RightParen (parênteses direito);
+	\item Dot (ponto).
+\end{itemize}
+
+A função responsável por converter um caractere em um token é a função new, ela recebe um caractere e retorna uma das opções disponíveis acima, caso contrário retorna nil.
+
+Para retornarmos uma sequência de tokens temos a função tokenizer. Ela recebe uma string, retira os espaços em branco com String.replace(), divide em grafemas (para evitar problemas com caracteres serem convertidos para sua forma em ASCII) e percorre a lista de grafemas com Enum.reduce\_while, transformando cada grafema em um token, e retornando uma lista de tokens. Caso algum caractere não possa ser convertido em um token, retorna nil. No final, a lista de tokens é invertida com Enum.reverse para preservar a ordem original.
+
+\begin{lstlisting}[language=elixir, caption=Função \texttt{tokenizer}]
+   def tokenizer(expr) do
+    expr
+    |> String.replace(" ", "")
+    |> String.graphemes()
+    |> Enum.reduce_while([], fn c, acc ->
+      case Tokens.new(c) do
+        nil -> {:halt, nil}
+        token -> {:cont, [token | acc]}
+      end
+    end)
+    |> case do
+      nil -> nil
+      tokens -> Enum.reverse(tokens)
+    end
+  end
+\end{lstlisting}
+
+\subsection{Parser}
+
+A etapa de parsing é a segunda etapa do interpretador. Nela fazemos a análise da sequência de tokens gerada pelo lexer e verificamos se corresponde à gramática do Cálculo Lambda, gerando a árvore sintatica do termo.
+
+A lista de tokens pode se tornar o seguinte:
+\begin{itemize}
+	\item Variable (variável): uma struct com apenas um campo chamado \texttt{name};
+	\item Abstraction (abstração): uma struct com dois campos, sendo o primeiro \texttt{param} (uma variável) e o segundo \texttt{term} (um termo);
+	\item Application (aplicação): uma struct com dois campos, sendo o primeiro \texttt{lterm} (termo da esquerda) e o segundo \texttt{rterm} (termo da direita).
+\end{itemize}
+
+Uma varíavel como dito tem uma estrutura parecida com a do Lexer, mas dessa vez armazenamos apenas o campo \texttt{lexeme} em \texttt{name} como descrito na estrutura acima
+\begin{lstlisting}[language=elixir, caption=Função \texttt{parse var}] 
+  def parse_var(tvec) do
+    if length(tvec) == 1 do
+      elem = Enum.at(tvec, 0)
+
+      if elem.type == :variable do
+        %Variable{name: elem.lexeme}
+      else
+        nil
+      end
+    else
+      nil
+    end
+  end
+\end{lstlisting}
+
+Já uma abstração é avaliada do seguinte modo: se o tamanho for menor que 4 e o primeiro token não for um parênteses esquerdo e o último não for um parênteses direto, retorna nil. Caso contrário, passamos para próxima fase onde verificamos se o segundo token é lambda e o quarto um ponto. Caso for verdade, verificamos se o tipo do terceiro token é uma variável e analisamos como tal, se não retornamos nil. Em caso de sucesso olhamos da quinta posição até a penúltima e analisamos recursivamente. Assim, criamos uma abstração com um parâmetro e um termo, caso contrário retornamos nil.
+\begin{lstlisting}[language=elixir, caption=Função \texttt{parse abstraction}] 
+  def parse_abstraction(tvec) do
+    cond do
+      length(tvec) < 4 ->
+        nil
+
+      Enum.at(tvec, 0).type != :left_paren or List.last(tvec).type != :right_paren ->
+        nil
+
+      true ->
+        if Enum.at(tvec, 1).type == :lambda and Enum.at(tvec, 3).type == :dot do
+          lnode =
+            case Enum.at(tvec, 2).type do
+              :variable -> %Variable{name: Enum.at(tvec, 2).lexeme}
+              _ -> nil
+            end
+
+          slice = 4..(length(tvec) - 2) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+          rnode = parse_tokens(slice)
+
+          if rnode != nil do
+            %Abstraction{param: lnode, term: rnode}
+          else
+            nil
+          end
+        else
+          nil
+        end
+    end
+  end
+\end{lstlisting}
+
+Seguimos a mesma estrutura de verificação para uma aplicação. Fazemos um slice da segunda posição até a última para contarmos o número de parênteses. Percorremos até encontramos o mesmo número de parênteses à esquerda e à direita, encerrando o processo com halt. Então analisamos a expressão de dentro dos parênteses e adicionamos no \texttt{lterm} e a da direita no \texttt{rterm}, assim formando uma aplicação.
+\begin{lstlisting}[language=elixir, caption=Função \texttt{parse application}] 
+  def parse_application(tvec) do
+    cond do
+      Enum.at(tvec, 0).type != :left_paren or List.last(tvec).type != :right_paren ->
+        nil
+
+      true ->
+        slice = 1..(length(tvec) - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+
+
+        {pos, _, _} =
+          Enum.reduce_while(slice, {1, 0, 0}, fn x, {i, lp, rp} ->
+            new_lp =
+              if x.type == :left_paren do
+                lp + 1
+              else
+                lp
+              end
+
+            new_rp =
+              if x.type == :right_paren do
+                rp + 1
+              else
+                rp
+              end
+
+            if new_lp == new_rp do
+              {:halt, {i + 1, new_lp, new_rp}}
+            else
+              {:cont, {i + 1, new_lp, new_rp}}
+            end
+          end)
+
+        lslice = 1..(pos - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        lnode = parse_tokens(lslice)
+        rslice = pos..(length(tvec) - 2) |> Enum.map(fn x -> Enum.at(tvec, x) end)
+        rnode = parse_tokens(rslice)
+
+        if lnode != nil and rnode != nil do
+          %Application{lterm: lnode, rterm: rnode}
+        else
+          nil
+        end
+    end
+  end
+\end{lstlisting}
+
+\subsection{Operações}
+
+A última etapa é executar as operações de $\alpha$-conversão e $\beta$-redução na árvore sintática que construímos.
+
+Dessa forma, precisamos verificar se as variáveis são livres em um termo, no caso, se todas as suas ocorrências não estão ligadas a uma abstração no termo. A função \texttt{is\_free} percorre recursivamente o termo e verifica se a variável ocorre fora de alguma abstração e, portanto, é livre.
+
+Definimos funções para realizarem operações definidas anteriormente:
+\begin{itemize}
+	\item \texttt{replace}: executa a substituição de uma variável por um termo;
+	\item \texttt{alpha}: executa a $\alpha$-conversão de uma abstração, trocando uma variável por outra, caso seja possível;
+	\item \texttt{beta}: executa a $\beta$-contração de uma aplicação, caso seja possível;
+	\item \texttt{is\_redex}: verifica se o termo é um redex.
+\end{itemize}
+
+Para executar a substituição, em um dos casos contamos com a função auxiliar \texttt{get\_var\_for\_alpha}. Essa função auxilia a encontrar uma variável nova apropriada para executar uma $\alpha$-conversão.
+
+A função \texttt{exec} é encarregada de executar todas as $\beta$-reduções e reduzir o termo até sua forma normal.
+
+\begin{lstlisting}[language=elixir, caption=Função \texttt{exec}]
+  def exec(term) do
+    case term do
+      %Variable{name: _} ->
+        term
+
+      %Abstraction{param: x, term: rterm} ->
+        new_rterm = exec(rterm)
+        %Abstraction{param: x, term: new_rterm}
+
+      %Application{lterm: lterm, rterm: rterm} ->
+        if is_redex(term) do
+          beta(term) |> exec()
+        else
+          new_lterm = exec(lterm)
+          new_rterm = exec(rterm)
+          new_term = %Application{lterm: new_lterm, rterm: new_rterm}
+
+          if is_redex(new_term) do
+            exec(new_term)
+          else
+            new_term
+          end
+        end
+    end
+  end
+\end{lstlisting}
+
 
 \nocite{*}
 \bibliographystyle{sbc}
