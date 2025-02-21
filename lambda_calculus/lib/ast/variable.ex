@@ -1,6 +1,6 @@
-defmodule LambdaCalculus.Ast.Variable  do
+defmodule LambdaCalculus.Ast.Variable do
   @enforce_keys [:name]
-  defstruct [:name] 
+  defstruct [:name]
 end
 
 defimpl String.Chars, for: LambdaCalculus.Ast.Variable do

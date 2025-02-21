@@ -5,10 +5,36 @@ defmodule LambdaCalculus.Op do
     Application
   }
 
+  def exec(term) do
+    case term do
+      %Variable{name: _} ->
+        term
+
+      %Abstraction{param: x, term: rterm} ->
+        new_rterm = exec(rterm)
+        %Abstraction{param: x, term: new_rterm}
+
+      %Application{lterm: lterm, rterm: rterm} ->
+        if is_redex?(term) do
+          beta(term) |> exec()
+        else
+          new_lterm = exec(lterm)
+          new_rterm = exec(rterm)
+          new_term = %Application{lterm: new_lterm, rterm: new_rterm}
+
+          if is_redex?(new_term) do
+            exec(new_term)
+          else
+            new_term
+          end
+        end
+    end
+  end
+
   defp alpha(term, var) do
     case term do
       %Abstraction{param: x, term: rterm} ->
-        if not is_free(var, rterm) do
+        if not is_free?(var, rterm) do
           %Abstraction{param: var, term: replace(rterm, x.name, var)}
         else
           term
@@ -32,33 +58,7 @@ defmodule LambdaCalculus.Op do
     end
   end
 
-  def exec(term) do
-    case term do
-      %Variable{name: _} ->
-        term
-
-      %Abstraction{param: x, term: rterm} ->
-        new_rterm = exec(rterm)
-        %Abstraction{param: x, term: new_rterm}
-
-      %Application{lterm: lterm, rterm: rterm} ->
-        if is_redex(term) do
-          beta(term) |> exec()
-        else
-          new_lterm = exec(lterm)
-          new_rterm = exec(rterm)
-          new_term = %Application{lterm: new_lterm, rterm: new_rterm}
-
-          if is_redex(new_term) do
-            exec(new_term)
-          else
-            new_term
-          end
-        end
-    end
-  end
-
-  defp is_free(var, term) do
+  defp is_free?(var, term) do
     case term do
       %Variable{name: x} ->
         x == var
@@ -67,11 +67,11 @@ defmodule LambdaCalculus.Op do
         if x.name == var do
           false
         else
-          is_free(var, rterm)
+          is_free?(var, rterm)
         end
 
       %Application{lterm: lterm, rterm: rterm} ->
-        is_free(var, lterm) or is_free(var, rterm)
+        is_free?(var, lterm) or is_free?(var, rterm)
     end
   end
 
@@ -89,10 +89,10 @@ defmodule LambdaCalculus.Op do
           x.name == from ->
             term
 
-          not is_free(from, rterm) ->
+          not is_free?(from, rterm) ->
             term
 
-          not is_free(x.name, to) ->
+          not is_free?(x.name, to) ->
             %Abstraction{param: x, term: replace(rterm, from, to)}
 
           true ->
@@ -108,8 +108,8 @@ defmodule LambdaCalculus.Op do
   defp get_var_for_alpha(term) do
     case term do
       %Abstraction{param: x, term: _} ->
-        Enum.reduce_while([?a..?z, ?A..?Z], "a", fn c, var ->
-          if not is_free(c, term) and c != x.name do
+        Enum.reduce_while([?a..?z, ?A..?Z], "a", fn c, _var ->
+          if not is_free?(c, term) and c != x.name do
             {:halt, c}
           end
         end)
@@ -119,7 +119,7 @@ defmodule LambdaCalculus.Op do
     end
   end
 
-  defp is_redex(term) do
+  defp is_redex?(term) do
     case term do
       %Application{lterm: lterm, rterm: _} ->
         case lterm do

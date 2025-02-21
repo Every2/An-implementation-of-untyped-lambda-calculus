@@ -5,15 +5,12 @@ defmodule LambdaCalculus.Parser do
     Application
   }
 
-  alias LambdaCalculus.Tokens
-  alias LambdaCalculus.Lexer
-
   def parse(expr) do
     token_vec = LambdaCalculus.Lexer.tokenizer(expr)
     parse_tokens(token_vec)
   end
 
-  def parse_tokens(tvec) do
+  defp parse_tokens(tvec) do
     cond do
       parse_var(tvec) != nil -> parse_var(tvec)
       parse_abstraction(tvec) != nil -> parse_abstraction(tvec)
@@ -22,7 +19,7 @@ defmodule LambdaCalculus.Parser do
     end
   end
 
-  def parse_var(tvec) do
+  defp parse_var(tvec) do
     if length(tvec) == 1 do
       elem = Enum.at(tvec, 0)
 
@@ -36,7 +33,7 @@ defmodule LambdaCalculus.Parser do
     end
   end
 
-  def parse_abstraction(tvec) do
+  defp parse_abstraction(tvec) do
     cond do
       length(tvec) < 4 ->
         nil
@@ -66,14 +63,13 @@ defmodule LambdaCalculus.Parser do
     end
   end
 
-  def parse_application(tvec) do
+  defp parse_application(tvec) do
     cond do
       Enum.at(tvec, 0).type != :left_paren or List.last(tvec).type != :right_paren ->
         nil
 
       true ->
         slice = 1..(length(tvec) - 1) |> Enum.map(fn x -> Enum.at(tvec, x) end)
-
 
         {pos, _, _} =
           Enum.reduce_while(slice, {1, 0, 0}, fn x, {i, lp, rp} ->

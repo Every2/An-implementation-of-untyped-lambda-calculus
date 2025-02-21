@@ -1,10 +1,9 @@
 defmodule LambdaCalculus do
-  alias LambdaCalculus.Lexer, as: L
   alias LambdaCalculus.Parser, as: P
   alias LambdaCalculus.Op, as: O
 
   def start do
-    IO.puts("Welcome to Lambda Calculus REPL")
+    IO.puts("Bem vindo ao REPL do cálculo λ")
 
     loop()
   end
@@ -13,26 +12,16 @@ defmodule LambdaCalculus do
     IO.write("> ")
     input = IO.gets("") |> String.trim()
 
-    case L.tokenizer(input) do
-      nil -> IO.puts("Invalid input.")
-      tokens -> 
-        print_tokens(tokens)
+    case P.parse(input) do
+      nil ->
+        IO.puts("Não é um termo")
+
+      term ->
+        IO.puts("É um termo")
+        IO.puts(O.exec(term))
     end
 
-	case P.parse(input) do
-	  nil -> IO.puts("Não é um termo")
-	  term ->
-		IO.puts("É um termo")
-		IO.puts(O.exec(term))
-	end
-
     loop()
-  end
-
-  defp print_tokens(tokens) do
-    Enum.each(tokens, fn token ->
-      IO.puts(to_string(token))
-    end)
   end
 end
 

@@ -2,7 +2,7 @@ defmodule LambdaCalculus.Tokens do
   @enforce_keys [:type, :lexeme]
   defstruct [:type, :lexeme]
 
-  def is_var(c), do: (c >= "a" && c <= "z") || (c >= "A" && c <= "Z")
+  defp is_var(c), do: (c >= "a" && c <= "z") || (c >= "A" && c <= "Z")
 
   def new(c) do
     cond do
@@ -16,7 +16,7 @@ defmodule LambdaCalculus.Tokens do
   end
 
   defimpl String.Chars, for: LambdaCalculus.Tokens do
-    def to_string(%LambdaCalculus.Tokens{type: type, lexeme: _lexeme} = _tokens) do
+    def to_string(%LambdaCalculus.Tokens{type: type, lexeme: _lexeme}) do
       "#{type}"
     end
   end
@@ -27,7 +27,7 @@ defmodule LambdaCalculus.Lexer do
 
   def tokenizer(expr) do
     expr
-    |> String.trim()
+	|> String.replace(" ", "")
     |> String.graphemes()
     |> Enum.reduce_while([], fn c, acc ->
       case Tokens.new(c) do
